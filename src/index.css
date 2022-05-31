@@ -1,0 +1,19 @@
+body {
+  margin: 50px;
+  font-family: 'Ubuntu', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+button {
+  background-color: #164589;
+  color: white;
+  border-radius: 20%;
+  font-size: large;
+  margin: 10px;
+}
