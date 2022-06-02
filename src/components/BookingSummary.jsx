@@ -156,7 +156,7 @@ const BookingSummary = () => {
           
         }
 
-        const handleBalance = (oldPlayers, newPlayers, duration, newPlay, handle) => {
+        const handleBalance =  (oldPlayers, newPlayers, duration, newPlay, handle) => {
           const prevAmount = parseFloat(((duration * 40) / oldPlayers.length).toFixed(2));
           const newAmount = handle === "remove" ? parseFloat(((duration * 40) / (oldPlayers.length-1)).toFixed(2)) : parseFloat(((duration * 40) / (oldPlayers.length+1)).toFixed(2))
           const diff = handle === "add" ? prevAmount-newAmount : newAmount-prevAmount
@@ -172,6 +172,9 @@ const BookingSummary = () => {
                 const plaBalance = handle === "add" ? parseFloat(f.balance.toFixed(2)) + diff : parseFloat(f.balance.toFixed(2)) - diff
                
                 testArray.push({name: name, balance: plaBalance})
+                
+                
+              
               }
               else if((f.name === newPlay) && (c===0)) {
                 c=1;
@@ -190,21 +193,43 @@ const BookingSummary = () => {
               if(f.name === p) {
 
                 const name = f.name
+                const id = f.id
                 const plaBalance = handle === "add" ? parseFloat(f.balance.toFixed(2)) + diff : parseFloat(f.balance.toFixed(2)) - diff
                
-                testArray.push({name: name, balance: plaBalance})
+                testArray.push({name: name, balance: plaBalance, id: id})
+                //request(name, plaBalance, id)
+                
               }
               else if((f.name === newPlay) && (c===0)) {
                 c=1;
                 const placBalance = handle === "add" ? parseFloat(f.balance.toFixed(2)) - prevAmount : parseFloat(f.balance.toFixed(2)) + prevAmount;
                 const name = f.name
                 
-                testArray.push({name: name, balance: placBalance})
+                testArray.push({name: name, balance: placBalance, id: f.id})
+                //request(name, placBalance, f.id)
               }
             })
           })
+          request(testArray)
+          //console.log(testArray)
+        }
 
-          console.log(testArray)
+        const request = (test) => {
+          
+          test && test.map((t)=>{
+            try {
+              const res = setDoc(doc(db, "players", t.id), {
+                name: t.name, balance: t.balance
+              },
+              {
+                merge: true
+              })
+              console.log(res.data())
+            } catch (err) {
+              console.log(err)
+            }
+          })
+          
         }
 
   return (
