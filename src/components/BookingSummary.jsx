@@ -62,14 +62,14 @@ const BookingSummary = () => {
     const [buttonClick, setButtonClick] = useState(false)
     const [newPlayer, setNewPlayer] = useState(" ")
     const [duplicatePlayer, setDuplicatePlayer] = useState(false)
-    const [newBalance, setNewBalance] = useState({})
-    const [updPlayerInfo, setUpdPlayerInfo] = useState([])
+    const [playerExist, setPlayerExist] = useState(false)
 
     const handleBooking = (e) => {
         e.preventDefault()
         setButtonClick(buttonClick ? false : true)
     }
     useEffect(()=> {
+      setPlayerExist(false)
         const unsub = onSnapshot(query(
             collection(db, "booking")),
             (snapShot) => {
@@ -126,12 +126,17 @@ const BookingSummary = () => {
               };
 
               const handleAdd = async (id, oldPlayers, duration) => {
-                
+                console.log(oldPlayers)
+                if(oldPlayers === undefined){
+                  oldPlayers=[];
+                }  
+                setPlayerExist(false)
                 const duplicateFound = oldPlayers && oldPlayers.find(p => p === newPlayer)
                 if(duplicateFound) {
                   setDuplicatePlayer(true)
                   return
                 } 
+
                 const newPlayers = oldPlayers ? oldPlayers.concat(newPlayer) : [newPlayer]
 
                 try {
@@ -147,7 +152,12 @@ const BookingSummary = () => {
                 }
               }
 
-        const handleDocDelete = async (id) => {
+        const handleDocDelete = async (id, playerQuantity) => {
+          if(playerQuantity>0) {
+            setPlayerExist(true)
+            return
+          }
+          setPlayerExist(false)
           try{
             await deleteDoc(doc(db, "booking",id))
           } catch(err) {
@@ -157,73 +167,83 @@ const BookingSummary = () => {
         }
 
         const handleBalance =  (oldPlayers, newPlayers, duration, newPlay, handle) => {
-          const prevAmount = parseFloat(((duration * 40) / oldPlayers.length).toFixed(2));
-          const newAmount = handle === "remove" ? parseFloat(((duration * 40) / (oldPlayers.length-1)).toFixed(2)) : parseFloat(((duration * 40) / (oldPlayers.length+1)).toFixed(2))
-          const diff = handle === "add" ? prevAmount-newAmount : newAmount-prevAmount
+          let prevNum = (duration * 40) / oldPlayers.length
+          prevNum = isFinite(prevNum) ? prevNum : 0.00
+          let newNum1 = (duration * 40) / (oldPlayers.length-1)
+          newNum1 = isFinite(newNum1) ? newNum1 : 0.00
+          let newNum2 = (duration * 40) / (oldPlayers.length+1)
+          newNum2 = isFinite(newNum2) ? newNum2 : 0.00
+          const prevAmount = oldPlayers.length === 0 ? 0 : Math.round((prevNum+ Number.EPSILON)*100)/100;
+          const newAmount = newPlayers.length === 0 ? 0 : handle === "remove" ? Math.round((newNum1 + Number.EPSILON)*100)/100 : Math.round((newNum2+ Number.EPSILON)*100)/100
+            
+          const diff = handle === "add" ? Math.abs(prevAmount-newAmount) : Math.abs(newAmount-prevAmount)
 
           let testArray = []
-          let c=0;
-
-          handle === "add" ? oldPlayers.map((p)=>{ 
-            playerData.map((f)=>{
-              if(f.name === p) {
-
-                const name = f.name
-                const plaBalance = handle === "add" ? parseFloat(f.balance.toFixed(2)) + diff : parseFloat(f.balance.toFixed(2)) - diff
-               
-                testArray.push({name: name, balance: plaBalance})
-                
-                
-              
-              }
-              else if((f.name === newPlay) && (c===0)) {
-                c=1;
-                const placBalance = handle === "add" ? parseFloat(f.balance.toFixed(2)) - prevAmount : parseFloat(f.balance.toFixed(2)) + prevAmount;
-                const name = f.name
-                
-                testArray.push({name: name, balance: placBalance})
-              }
-            })
-          }) 
           
-          :
+          if(handle === "add") {
+            if(oldPlayers.length === 0) {
+              playerData.map((f) => {
+                if(f.name === newPlay) {
+                  const balance = f.balance - newAmount;
+                  testArray.push({id: f.id, name: f.name, balance: balance})
+                }
+              })
+            }
+            else {
+              let count = 0;
+              oldPlayers.map((p)=>{ 
+                playerData.map((f)=>{
+                  if(f.name === p) {
+                    const balance = f.balance + diff 
+                    testArray.push({id: f.id, name: f.name, balance: balance})
+                  }
+                  if(f.name === newPlay && count === 0) {
+                    const balance = f.balance - newAmount
+                    testArray.push({id: f.id, name: f.name, balance: balance})
+                    count++;
+                  }
+            })
+          })
+        }
+        
+      } else {
+        if(newPlayers.length === 0) {
+          playerData.map((f) => {
+            if(f.name === newPlay) {
+              const balance = f.balance + prevAmount;
+              testArray.push({id: f.id, name: f.name, balance: balance})
+            }
 
+          })
+        } else {
+          let count =0;
           newPlayers.map((p)=>{ 
             playerData.map((f)=>{
               if(f.name === p) {
-
-                const name = f.name
-                const id = f.id
-                const plaBalance = handle === "add" ? parseFloat(f.balance.toFixed(2)) + diff : parseFloat(f.balance.toFixed(2)) - diff
-               
-                testArray.push({name: name, balance: plaBalance, id: id})
-                //request(name, plaBalance, id)
-                
+                const balance = f.balance - diff 
+                testArray.push({id: f.id, name: f.name, balance: balance})
               }
-              else if((f.name === newPlay) && (c===0)) {
-                c=1;
-                const placBalance = handle === "add" ? parseFloat(f.balance.toFixed(2)) - prevAmount : parseFloat(f.balance.toFixed(2)) + prevAmount;
-                const name = f.name
-                
-                testArray.push({name: name, balance: placBalance, id: f.id})
-                //request(name, placBalance, f.id)
+              if(f.name === newPlay && count === 0) {
+                const balance = f.balance + prevAmount
+                testArray.push({id: f.id, name: f.name, balance: balance})
+                count++;
               }
-            })
-          })
-          request(testArray)
-          //console.log(testArray)
+        })
+      })
         }
+        
+      }
+      console.log(testArray)
+      request(testArray)
+    }
 
         const request = (test) => {
-          
           test && test.map((t)=>{
             try {
-              const res = setDoc(doc(db, "players", t.id), {
-                name: t.name, balance: t.balance
-              },
-              {
-                merge: true
+              const res = updateDoc(doc(db, "players", t.id),{
+                balance: t.balance
               })
+              
               console.log(res.data())
             } catch (err) {
               console.log(err)
@@ -233,29 +253,30 @@ const BookingSummary = () => {
         }
 
   return (
-    <Summary>
-      <PlaySummary>
-      
-          <button onClick={handleBooking}>Add Booking</button>
+    <div class="flex flex-row justify-between">
+      <div class="basis-3/4">
+          <button class="my-0 mx-28" onClick={handleBooking}>Add New Booking</button>
           {buttonClick && <BookingCalender setButtonClick={setButtonClick}/>}
+          {playerExist && <p class="bg-midnight">Remove all players first</p>}
           {bookingData && bookingData.map((data)=>(
-              <Booking key={data.id}>
-              <Link to={'/editbooking/'+data.id}><button>Edit</button></Link>
-              <button onClick={()=>handleDocDelete(data.id)}>Delete</button>
-                  <h3>{data.date}</h3>
-                  <h3>Start time: {data.startTime}</h3>
-                  <h4>Duration: {data.duration}</h4>
-                  <Players>Players: {data.players && data.players.map((player, index, key)=>(
-                      <PlayerList id={key}>
+              <div class="border-solid border-2 border-indigo-600 w-96 p-8 my-2" key={data.id}>
+              <Link to={'/editbooking/'+data.id}><button class="font-bold">Edit</button></Link>
+              <button class="m-2 font-bold" onClick={()=>handleDocDelete(data.id, data.players.length)}>Delete</button>
+                    
+                  <p><b>Date: </b>{data.date}</p>
+                  <p><b>Start time: </b>{data.startTime}</p>
+                  <p><b>Duration: </b>{data.duration}</p>
+                  <div class="text-left">Players: {data.players && data.players.map((player, index, key)=>(
+                      <div class="flex items-center" id={key}>
                           <Player>{index+1}. {player}</Player>
-                          <Remove onClick={()=>handlePlayerDelete(data.id, data.players, player, data.duration)}>
+                          <button class="m-1" onClick={()=>handlePlayerDelete(data.id, data.players, player, data.duration)}>
                               <RemoveCircleIcon />
                               Remove
-                          </Remove>
-                      </PlayerList>
+                          </button>
+                      </div>
                     ))}
                     
-                  </Players>
+                  </div>
                   
                   <label>Add a player: </label>
                   <PlayerSelect onChange={((e)=>setNewPlayer(e.target.value))}>
@@ -268,15 +289,15 @@ const BookingSummary = () => {
                   </PlayerSelect>
                   <button onClick={()=>handleAdd(data.id, data.players, data.duration)}>ADD</button>
                   
-              </Booking>
+              </div>
           ))}
           
           
-      </PlaySummary>
-      <BalanceSummary>
+      </div>
+      <div class="basis-1/4">
         <BalanceAmount/>
-      </BalanceSummary>
-    </Summary>
+      </div>
+    </div>
   )
 }
 

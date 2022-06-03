@@ -53,7 +53,7 @@ const BookingCalender = ({setButtonClick}) => {
       setButtonClick(false)
     }
   return (
-    <BookingPage>   
+    <div>   
         <LocalizationProvider dateAdapter={AdapterMoment}>
             <DateTimePicker
                 renderInput={(props) => <TextField {...props} />}
@@ -65,16 +65,16 @@ const BookingCalender = ({setButtonClick}) => {
             />
         </LocalizationProvider>
         <div>
-          <label>Duration</label>
-          <Duration name='duration' id='duration' onChange={(e)=>setDuration(e.target.value)}>
-            <option value="" selected disabled hidden>Duration</option>
-            <option value={1}>1 hour</option>
-            <option value={2}>2 hours</option>
-          </Duration>
+          <label  class="p-2">Duration</label>
+          <select class="p-3" name='duration' id='duration' onChange={(e)=>setDuration(e.target.value)}>
+            <option class="p-3" value="" selected disabled hidden>Duration</option>
+            <option class="p-3" value={1}>1 hour</option>
+            <option class="p-3" value={2}>2 hours</option>
+          </select>
         </div>
         <button onClick={()=>handleAdd()}>Add</button>
         <button onClick={()=>setButtonClick(false)}>Close</button>
-    </BookingPage>
+    </div>
   )
 }
 
