@@ -253,8 +253,8 @@ const BookingSummary = () => {
         }
 
   return (
-    <div class="flex flex-row justify-between">
-      <div class="basis-3/4">
+    <div class="flex flex-row w-3/5 sm:flex-col text-center justify-center mx-auto my-0">
+      <div class="flex flex-col justify-center my-0 mx-auto">
           <button class="my-0 mx-28" onClick={handleBooking}>Add New Booking</button>
           {buttonClick && <BookingCalender setButtonClick={setButtonClick}/>}
           {playerExist && <p class="bg-midnight">Remove all players first</p>}
@@ -294,7 +294,7 @@ const BookingSummary = () => {
           
           
       </div>
-      <div class="basis-1/4">
+      <div class="">
         <BalanceAmount/>
       </div>
     </div>
